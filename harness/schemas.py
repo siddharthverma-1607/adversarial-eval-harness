@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 class AttackDefinition(BaseModel):
     id: str
@@ -16,8 +16,6 @@ class RunCreate(BaseModel):
     attack_ids: Optional[List[str]] = Field(None, description="Optional subset of attack IDs")
 
 class AttackResultRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
     attack_id: str
     attack_name: str
     attack_description: Optional[str]
@@ -25,19 +23,14 @@ class AttackResultRead(BaseModel):
     output: str
     decision: str
     reason: Optional[str]
-    judge_version: str
-    latency_ms: Optional[float]
-    error: Optional[str]
-    created_at: datetime
+
+    class Config:
+        orm_mode = True
 
 class RunRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
     id: int
     name: str
     system_prompt: Optional[str]
-    selected_attack_ids: Optional[str]
-    model_provider: str
     model_name: str
     model_version: str
     status: str
@@ -46,22 +39,24 @@ class RunRead(BaseModel):
     completed_at: Optional[datetime]
     summary: Optional[str]
 
+    class Config:
+        orm_mode = True
+
 class RunWithResults(RunRead):
     results: List[AttackResultRead]
 
 class ComparisonChange(BaseModel):
     attack_id: str
     attack_name: str
-    baseline_decision: Optional[str]
-    new_decision: Optional[str]
-    baseline_output: Optional[str]
-    new_output: Optional[str]
-    change_type: str
+    baseline_decision: str
+    new_decision: str
+    baseline_output: str
+    new_output: str
     shifted: bool
 
 class ComparisonSummary(BaseModel):
-    baseline_run_id: Optional[int]
-    new_run_id: Optional[int]
+    baseline_run_id: int
+    new_run_id: int
     changed_attacks: int
     total_attacks: int
     changes: List[ComparisonChange]

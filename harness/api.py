@@ -3,8 +3,8 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from .db import init_db
 from .runner import EvaluationRunner
-from .attacks import list_attacks
-from .schemas import RunCreate, RunRead, AttackDefinition, AttackResultRead, ComparisonSummary
+from .attacks import list_attacks, get_attack_by_id
+from .schemas import RunCreate, RunRead, RunWithResults, AttackDefinition, AttackResultRead, ComparisonSummary, ComparisonChange
 from .comparison import compare_runs
 
 app = FastAPI(title="Adversarial Eval Harness")
@@ -31,10 +31,7 @@ def api_list_attacks() -> list[AttackDefinition]:
 
 @app.post("/runs", response_model=RunRead, status_code=status.HTTP_201_CREATED)
 def create_run(payload: RunCreate) -> RunRead:
-    try:
-        run = runner.create_run(payload)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+    run = runner.create_run(payload)
     return run
 
 @app.post("/runs/{run_id}/start", response_model=RunRead)
@@ -88,7 +85,6 @@ def compare_run(run_id: int, baseline_id: int) -> ComparisonSummary:
                     "new_decision": change.new_decision,
                     "baseline_output": change.baseline_output,
                     "new_output": change.new_output,
-                    "change_type": change.change_type,
                     "shifted": change.shifted,
                 }
                 for change in diff["changes"]

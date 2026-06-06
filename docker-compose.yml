@@ -1,6 +1,7 @@
+version: "3.9"
 services:
   db:
-    image: postgres:15-alpine
+    image: postgres:15
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -14,47 +15,31 @@ services:
       retries: 5
 
   api:
-    image: adversarial-eval-harness:local
     build: .
     depends_on:
       db:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/adversarial
-      MODEL_TYPE: ${MODEL_TYPE:-mock}
-      MODEL_NAME: ${MODEL_NAME:-mock-safe}
-      MODEL_VERSION: ${MODEL_VERSION:-baseline}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
-      REQUEST_TIMEOUT_SECONDS: ${REQUEST_TIMEOUT_SECONDS:-60}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      MODEL_TYPE: mock
+      MODEL_NAME: gpt-4.1
+      MODEL_VERSION: latest
     ports:
       - "8000:8000"
     command: ["uvicorn", "harness.api:app", "--host", "0.0.0.0", "--port", "8000"]
 
   worker:
-    image: adversarial-eval-harness:local
+    build: .
     depends_on:
       db:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/adversarial
-      MODEL_TYPE: ${MODEL_TYPE:-mock}
-      MODEL_NAME: ${MODEL_NAME:-mock-safe}
-      MODEL_VERSION: ${MODEL_VERSION:-baseline}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
-      REQUEST_TIMEOUT_SECONDS: ${REQUEST_TIMEOUT_SECONDS:-60}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      WORKER_POLL_INTERVAL: ${WORKER_POLL_INTERVAL:-5}
+      MODEL_TYPE: mock
+      MODEL_NAME: gpt-4.1
+      MODEL_VERSION: latest
+      WORKER_POLL_INTERVAL: "5"
     command: ["python", "-m", "harness.worker"]
-
-  ollama:
-    image: ollama/ollama:latest
-    profiles: ["ollama"]
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
 
 volumes:
   db_data:
-  ollama_data:
